@@ -8,19 +8,16 @@ This repository contains scripts designed to handle ancient DNA (aDNA) damage pa
 ## Contents
 
 - **adna_sslib_damage_removal.py**  
-  This script processes single-stranded ancient DNA libraries to remove C->T substitutions, which are often indicative of ancient DNA damage, rather than true genetic mutations. The script reconstructs the reference sequence using the CIGAR and MD tags and then removes C->T substitutions on the forward strand and G->A substitutions on the reverse strand. This script is especially useful for single-stranded library preparations typical of ancient DNA studies.
+  This script processes single-stranded ancient DNA libraries to remove damage-specific substitutions. Taking into account the characteristics of single-stranded libraries, this script reconstructs the reference sequence using the CIGAR and MD tags and then removes C->T transitions on the forward strand and G->A transitions on the reverse strand.
 
 - **rmTrans_and_keep_trueMut_for_minDepth.py**
-  This script removes C->T and G->A transitions that are typical of ancient DNA damage, while retaining transitions at positions likely representing true mutations based on user-defined thresholds. It allows for the identification of genuine mutations in low-quality, ancient DNA samples by applying a minimum read depth and a transition frequency threshold.
+  This script processes both single-stranded and double-stranded libraries undistinctly to remove damage-specific substitutions. It removes C->T and G->A transitions, which are common damage patterns in ancient DNA, while retaining transitions at positions likely representing true mutations based on the transition frequency and the minimum read depth at a position. 
 
 ---
 
 ## Usage
 
 ### adna_sslib_damage_removal.py
-
-**Description**
-This script removes C->T substitutions from single-stranded ancient DNA libraries, which are indicative of ancient DNA damage rather than genuine mutations. It reconstructs the reference sequence based on the CIGAR and MD tags, allowing for accurate identification and removal of damage-specific transitions. This is particularly useful for researchers working with single-stranded library preparations of ancient DNA.
 
 **Arguments**
 - `-b`, `--bamfile`: Path to the input BAM file.
@@ -33,14 +30,11 @@ python adna_sslib_damage_removal.py -b input.bam -o output.bam
 
 ### rmTrans_and_keep_trueMut_for_minDepth.py
 
-**Description**  
-This script processes a BAM file to remove C->T and G->A transitions unless they appear as true mutations, based on specific thresholds. The script can be customised to set minimum read depth and transition frequency thresholds, making it flexible for different data qualities and research needs.
-
 **Arguments**  
 - `-b`, `--bamfile`: Path to the input BAM file.
 - `-o`, `--output`: Path to the output BAM file where processed reads will be saved.
 - `-r`, `--reference`: Path to the reference FASTA file.
-- `-t`, `--threshold`: Threshold for transition percentage to consider as a true mutation. (Default: 0.9)
+- `-t`, `--threshold`: Threshold for transition frequency to consider as a true mutation. (Default: 0.9)
 - `-d`, `--min_depth`: Minimum read depth required to consider a position as a true mutation. (Default: 3)
 
 **Example Command**
