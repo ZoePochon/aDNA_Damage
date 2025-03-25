@@ -44,14 +44,15 @@ def count_transitions(bamfile):
             if read.mapping_quality == 0 or read.is_unmapped:
                 continue
 
-            read_seq = read.query_sequence
-            ref_pos = read.reference_start
             ref_name = read.reference_name
 
-            for base_index in range(len(read_seq)):
-                ref_base = reference.fetch(ref_name, ref_pos + base_index, ref_pos + base_index + 1).upper()
-                read_base = read_seq[base_index]
-                current_position = f"{ref_name}:{ref_pos + base_index}"
+            for query_pos, ref_pos, ref_base in read.get_aligned_pairs(with_seq=True):
+                if ref_pos is None or query_pos is None:
+                    continue  # skip insertions or clipping
+
+                ref_base = ref_base.upper() if ref_base else reference.fetch(ref_name, ref_pos, ref_pos + 1).upper()
+                read_base = read.query_sequence[query_pos]
+                current_position = f"{ref_name}:{ref_pos}"
 
                 transition_counts[current_position]["total"] += 1
 
@@ -82,19 +83,20 @@ with pysam.AlignmentFile(args.bamfile, "rb") as bam, pysam.AlignmentFile(args.ou
         ref_name = read.reference_name
         updated_seq = list(read_seq)
 
-        for base_index in range(len(read_seq)):
-            current_position = f"{ref_name}:{ref_pos + base_index}"
+        for query_pos, ref_pos, ref_base in read.get_aligned_pairs(with_seq=True):
+            if ref_pos is None or query_pos is None:
+                continue
+
+            current_position = f"{ref_name}:{ref_pos}"
 
             if current_position in true_mutations:
                 continue
 
-            ref_base = reference.fetch(ref_name, ref_pos + base_index, ref_pos + base_index + 1).upper()
-            read_base = read_seq[base_index]
+            ref_base = ref_base.upper() if ref_base else reference.fetch(ref_name, ref_pos, ref_pos + 1).upper()
+            read_base = read.query_sequence[query_pos]
 
-            if ref_base == "C" and read_base == "T":
-                updated_seq[base_index] = "N"
-            elif ref_base == "G" and read_base == "A":
-                updated_seq[base_index] = "N"
+            if (ref_base == "C" and read_base == "T") or (ref_base == "G" and read_base == "A"):
+                updated_seq[query_pos] = "N"
 
         read.query_sequence = "".join(updated_seq)
         read.query_qualities = read_qualities
