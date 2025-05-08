@@ -80,6 +80,10 @@ def reconstruct_sequences(cigar_string, md_string, sequence):
             seq_reference += md_tokens[md_index][1:]  # Skip the '^'
             seq_query += '-' * deletion_length
             md_index += 1
+        elif operation == 'S':  # Soft clipping
+            seq_query += sequence[seq_pos:seq_pos + length]
+            seq_reference += '-' * length
+            seq_pos += length
     return [seq_reference, seq_query]
 
 
