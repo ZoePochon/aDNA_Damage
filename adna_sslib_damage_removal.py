@@ -16,12 +16,19 @@ Authors:
 ### Parse the arguments
 parser = argparse.ArgumentParser(description="Process bam file to remove C->T substitutions from single stranded ancient DNA libraries.")
 parser.add_argument("-b", "--bamfile", required=True, help="Path to the input BAM file.")
+parser.add_argument("-l", "--library", required=True, help="single-stranded or double-stranded library. If single-stranded, the script will remove only C->T substitutions. If double-stranded, the script will not remove C->T and G->A substitutions.")
 parser.add_argument("-o", "--output", required=True, help="Path to the output BAM file.")
+
 
 args = parser.parse_args()
 
 bamfile = args.bamfile
 output_bam_file = args.output
+library_type = args.library
+
+if library_type not in ["single-stranded", "double-stranded"]:
+    print("Library type must be either 'single-stranded' or 'double-stranded'. Exiting...")
+    exit()
 
 
 ### Define the functions
@@ -117,15 +124,24 @@ with pysam.AlignmentFile(bamfile, "rb") as bam, pysam.AlignmentFile(output_bam_f
             print(MD_tag, cigar, ref_pos, ref_reconstructed, read_seq, read_seq_updated, reverse)
             exit()
 
-        ## remove C->T substitution
-        if not reverse:
+        ## if library type is single-stranded, remove C->T substitutions
+        if library_type == "single-stranded":
+            if not reverse:
+                for base in range(len(ref_reconstructed)):
+                    if ref_reconstructed[base] == "C" and read_seq_updated[base] == "T":
+                        read_seq_updated = read_seq_updated[:base] + "N" + read_seq_updated[base+1:]
+            else:
+                for base in range(len(ref_reconstructed)):
+                    if ref_reconstructed[base] == "G" and read_seq_updated[base] == "A":
+                        read_seq_updated = read_seq_updated[:base] + "N" + read_seq_updated[base+1:]
+        ## if library type is double-stranded, remove C->T and G->A substitutions
+        elif library_type == "double-stranded":
             for base in range(len(ref_reconstructed)):
                 if ref_reconstructed[base] == "C" and read_seq_updated[base] == "T":
                     read_seq_updated = read_seq_updated[:base] + "N" + read_seq_updated[base+1:]
-        else:
-            for base in range(len(ref_reconstructed)):
-                if ref_reconstructed[base] == "G" and read_seq_updated[base] == "A":
+                elif ref_reconstructed[base] == "G" and read_seq_updated[base] == "A":
                     read_seq_updated = read_seq_updated[:base] + "N" + read_seq_updated[base+1:]
+
 
         if len(ref_reconstructed) != len(read_seq_updated):
             print("Length of reference resconstructed and read sequence do not match. Exiting...")
