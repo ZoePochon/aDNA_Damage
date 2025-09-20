@@ -18,7 +18,7 @@ Description:
     - Minimum depth threshold (default 3): Only positions with a minimum read depth of 3 are considered for mutation analysis, the other ones have transition removed.
 
     Usage:
-        python rmTrans_and_keep_trueMut_for_minDepth.py -b input.bam -o output.bam -r reference.fasta -t 0.9 -d 2
+        python rmDamage_keepMut.py -b input.bam -o output.bam -r reference.fasta -t 0.9 -d 3
 """
 
 # Parse arguments
@@ -37,11 +37,15 @@ reference = pysam.FastaFile(args.reference)
 # Initialize a dictionary to store counts for each position
 transition_counts = defaultdict(lambda: {"total": 0, "transitions": 0})
 
+# Counters for summary statistics
+true_mutation_count = 0
+masked_damage_count = 0
+
 # Function to process each read and collect transition statistics
 def count_transitions(bamfile):
     with pysam.AlignmentFile(bamfile, "rb") as bam:
         for read in tqdm(bam.fetch(), desc="Counting transitions"):
-            if read.mapping_quality == 0 or read.is_unmapped:
+            if read.is_unmapped:
                 continue
 
             ref_name = read.reference_name
@@ -71,10 +75,12 @@ def identify_true_mutations(threshold, min_depth):
 with pysam.AlignmentFile(args.bamfile, "rb") as bam, pysam.AlignmentFile(args.output, "wb", header=bam.header) as out_bam:
     count_transitions(args.bamfile)
     true_mutations = identify_true_mutations(args.threshold, args.min_depth)
-    print(f"Identified {len(true_mutations)} true mutation positions with depth >= {args.min_depth}.")
+    true_mutation_count = len(true_mutations)
+    print(f"\nTransition analysis complete.")
+    print(f"→ Identified {true_mutation_count} true mutation positions with depth ≥ {args.min_depth}.")
 
     for read in tqdm(bam.fetch(), desc="Processing reads"):
-        if read.mapping_quality == 0 or read.is_unmapped:
+        if read.is_unmapped:
             continue
 
         read_seq = read.query_sequence
@@ -97,7 +103,15 @@ with pysam.AlignmentFile(args.bamfile, "rb") as bam, pysam.AlignmentFile(args.ou
 
             if (ref_base == "C" and read_base == "T") or (ref_base == "G" and read_base == "A"):
                 updated_seq[query_pos] = "N"
+                masked_damage_count += 1
 
         read.query_sequence = "".join(updated_seq)
         read.query_qualities = read_qualities
         out_bam.write(read)
+
+print()
+print("----- Summary -----")
+print(f"True mutation positions retained: {true_mutation_count}")
+print(f"Likely damaged transitions masked with 'N': {masked_damage_count}")
+print("-------------------")
+
