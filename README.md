@@ -10,7 +10,7 @@ This repository contains scripts designed to handle ancient DNA (aDNA) damage pa
 - **adna_sslib_damage_removal.py**  
   This script processes single-stranded ancient DNA libraries to remove damage-specific substitutions. Taking into account the characteristics of single-stranded libraries, this script reconstructs the reference sequence using the CIGAR and MD tags and then removes C->T transitions on the forward strand and G->A transitions on the reverse strand.
 
-- **rmDamage_keepMut.py**
+- **maskDamage.py**
   This script processes both single-stranded and double-stranded libraries undistinctly to remove damage-specific substitutions. It removes C->T and G->A transitions, which are common damage patterns in ancient DNA, while retaining transitions at positions likely representing true mutations based on the transition frequency and the minimum read depth at a position. 
 
 ---
@@ -28,7 +28,7 @@ This repository contains scripts designed to handle ancient DNA (aDNA) damage pa
 python adna_sslib_damage_removal.py -b input.bam -o output.bam
 ```
 
-### rmDamage_keepMut.py
+### maskDamage.py
 
 **Arguments**  
 - `-b`, `--bamfile`: Path to the input BAM file.
@@ -39,7 +39,7 @@ python adna_sslib_damage_removal.py -b input.bam -o output.bam
 
 **Example Command**
 ```bash
-python rmDamage_keepMut.py -b input.bam -o output.bam -r reference.fasta -t 0.9 -d 3
+python maskDamage.py -b input.bam -o output.bam -r reference.fasta -t 0.9 -d 3
 ```
 ---
 
@@ -63,5 +63,5 @@ pip install pysam tqdm
 - **Benjamin Guinet** - Contributor to `adna_sslib_damage_removal.py`  
   [GitHub Profile](https://github.com/BenjaminGuinet)
 
-- **Zoé Pochon** - Developer of `rmDamage_keepMut.py`  
+- **Zoé Pochon** - Developer of `maskDamage.py`  
   [GitHub Profile](https://github.com/ZoePochon)
